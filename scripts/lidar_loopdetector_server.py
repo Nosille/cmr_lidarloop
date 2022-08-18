@@ -125,7 +125,9 @@ def LiDAR_Loopdetector_server():
 if __name__ == "__main__":
     rospack = rospkg.RosPack()
     path_cmr_lidarloop=rospack.get_path('cmr_lidarloop')
+    print("path: " + path_cmr_lidarloop)
     detector_name = 'LiDAR_Loopdetector_python' + str(sys.version_info.major) + '.pickle'
     with open(path_cmr_lidarloop+'/detector/training/' + detector_name, 'rb') as f:
             detector = pickle.load(f, encoding='latin1')
+    print("Detector Loaded: " + detector_name)
     LiDAR_Loopdetector_server()

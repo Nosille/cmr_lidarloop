@@ -54,3 +54,4 @@ cmake_install.cmake
 .idea
 
 detector/training/plots/*
+.vscode/

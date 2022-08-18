@@ -71,27 +71,19 @@ void computeKeypointsAndDescriptors(PointCloud<PointXYZI>::Ptr cloud,
   search::KdTree<PointXYZI>::Ptr tree (new search::KdTree<PointXYZI> ());
   fpfh_est->setSearchMethod(tree);
 
-  fpfh_est->setKSearch(130);
-  fpfh_est->compute(*features);
-  *keypoints = *cloud;
-  return;
+  MultiscaleFeaturePersistence<PointXYZI, FPFHSignature33> fpfh_per;
+  fpfh_per.setScalesVector(scale_values);
+  fpfh_per.setAlpha(alpha);
+  fpfh_per.setFeatureEstimator(fpfh_est);
+  fpfh_per.setDistanceMetric(pcl::CS);
+  auto keypoint_indices = pcl::make_shared<pcl::Indices>();
+  fpfh_per.determinePersistentFeatures(*features, keypoint_indices);
 
-  // Multiscale commented due to seg fault bug in newer PCL versions
-  // Fix not yet available in official PCL debs as of 04/2022
-  // See: https://github.com/PointCloudLibrary/pcl/pull/5109
-  //  MultiscaleFeaturePersistence<PointXYZI, FPFHSignature33> fpfh_per;
-  //  fpfh_per.setScalesVector(scale_values);
-  //  fpfh_per.setAlpha(alpha);
-  //  fpfh_per.setFeatureEstimator(fpfh_est);
-  //  fpfh_per.setDistanceMetric(pcl::CS);
-  //  boost::shared_ptr<std::vector<int> > keypoint_indices(new std::vector<int> ());
-  //  fpfh_per.determinePersistentFeatures(*features, keypoint_indices);
-
-  //  //Extract keypoints from cloud
-  //  ExtractIndices<PointXYZI> extract_indices_filter;
-  //  extract_indices_filter.setInputCloud(cloud);
-  //  extract_indices_filter.setIndices(keypoint_indices);
-  //  extract_indices_filter.filter(*keypoints);
+  //Extract keypoints from cloud
+  ExtractIndices<PointXYZI> extract_indices_filter;
+  extract_indices_filter.setInputCloud(cloud);
+  extract_indices_filter.setIndices(keypoint_indices);
+  extract_indices_filter.filter(*keypoints);
 }
 
 void normalsVis (
@@ -434,14 +426,14 @@ void random_downsampling(PointCloud<PointXYZI>::Ptr cloud,
 {
   if (cloud->size()>max_points){
     //Downsample cloud randomly until max_points
-    std::vector<int> indices_cloud;
+    pcl::Indices indices_cloud;
     for (int i = 0; i < cloud->size(); ++i) {
       indices_cloud.push_back(i);
     }
     int n_del=cloud->size()-max_points;
     //Shuffle vector randomly
     std::random_shuffle(indices_cloud.begin(), indices_cloud.end());
-    boost::shared_ptr<std::vector<int> > indices_delete (new std::vector<int> (indices_cloud.begin(),indices_cloud.begin()+n_del));
+    auto indices_delete = pcl::make_shared<pcl::Indices>(indices_cloud.begin(),indices_cloud.begin()+n_del);
     //Delete points
     ExtractIndices<PointXYZI> indices_filter;
     indices_filter.setInputCloud (cloud);
